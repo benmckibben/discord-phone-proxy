@@ -17,13 +17,12 @@ async def send_discord_message(message: str):
     async with ClientSession() as session:
         async with session.post(
             f"https://discord.com/api/channels/{CHANNEL_ID}/messages",
-            json={"content": message},
+            json={"content": f"```json\n{message}\n```"},
             headers={
                 "Authorization": f"Bot {BOT_TOKEN}",
                 "User-Agent": "ProxyBot (http://some.url, v0.1)",
             }
         ) as response:
-            print(response.status)
             return await response.text()
 
 
@@ -32,13 +31,13 @@ def index(request: Request) -> PlainTextResponse:
 
 async def echo(websocket: WebSocket) -> None:
     await websocket.accept()
+    await send_discord_message("A new call has been accepted!")
     try:
         while True:
             payload: dict = await websocket.receive_json()
-            result = await send_discord_message(payload.get("message"))
-            await websocket.send_json({"success": True, "response": result})
+            
+            # TODO: more interesting things here
     except Exception:
-        await websocket.send_json({"success": False})
         await websocket.close()
         raise
 
