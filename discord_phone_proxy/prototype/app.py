@@ -36,7 +36,16 @@ async def echo(websocket: WebSocket) -> None:
         while True:
             payload: dict = await websocket.receive_json()
             
-            # TODO: more interesting things here
+            if payload.get("event") == "media":
+                await websocket.send_json({
+                    "event": "media",
+                    "streamSid": payload.get("streamSid"),
+                    "media": {
+                        # audio/x-mulaw with a sample rate of 8000 and base64 encoded
+                        # Per https://www.twilio.com/docs/voice/twiml/stream#message-media-to-twilio
+                        "payload": payload["media"]["payload"],
+                    }
+                })
     except Exception:
         await websocket.close()
         raise
