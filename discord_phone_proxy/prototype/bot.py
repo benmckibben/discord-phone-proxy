@@ -16,27 +16,28 @@ class MyClient(discord.Client):
         DELAY = FRAME_LENGTH / 1000.0
 
         while True:
-            i = 0
-            self.no_audio = discord.FFmpegOpusAudio("no.wav")
-            
-            start = perf_counter()
-            loops = 0
+            #with open("no.wav", "rb") as f:
+            with open("call.wav", "rb") as f:
+                no_audio = discord.FFmpegOpusAudio(f, pipe=True)
+                
+                start = perf_counter()
+                loops = 0
 
-            while True:
-                loops += 1
-                chunk =  self.no_audio.read()
-                if not chunk:
-                    break
+                while True:
+                    loops += 1
+                    chunk =  no_audio.read()
+                    if not chunk:
+                        break
 
-                self.voice_client.send_audio_packet(chunk, encode=False)
+                    self.voice_client.send_audio_packet(chunk, encode=False)
 
-                next_time = start + DELAY * loops
-                delay = max(0, DELAY + (next_time - perf_counter()))
-                await sleep(delay)
+                    next_time = start + DELAY * loops
+                    delay = max(0, DELAY + (next_time - perf_counter()))
+                    await sleep(delay)
 
-    
-            await channel.send("Just finished playing audio")
-            await sleep(3)
+        
+                await channel.send("Just finished playing audio")
+                await sleep(3)
 
     async def still_connected_loop(self, channel):
         while True:

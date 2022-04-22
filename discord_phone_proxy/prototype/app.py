@@ -1,3 +1,6 @@
+import base64
+import wave
+
 from aiohttp import ClientSession
 from starlette.applications import Starlette
 from starlette.config import Config
@@ -33,22 +36,28 @@ async def echo(websocket: WebSocket) -> None:
     await websocket.accept()
     await send_discord_message("A new call has been accepted!")
     try:
-        while True:
-            payload: dict = await websocket.receive_json()
-            
-            if payload.get("event") == "media":
-                await websocket.send_json({
-                    "event": "media",
-                    "streamSid": payload.get("streamSid"),
-                    "media": {
-                        # audio/x-mulaw with a sample rate of 8000 and base64 encoded
-                        # Per https://www.twilio.com/docs/voice/twiml/stream#message-media-to-twilio
-                        "payload": payload["media"]["payload"],
-                    }
-                })
-    except Exception:
+        with wave.open("call.wav", "wb") as f:
+            f.setnchannels(1)
+            f.setsampwidth(1)
+            f.setframerate(8000)
+
+            while True:
+                payload: dict = await websocket.receive_json()
+                
+                if payload.get("event") == "media":
+                    snippet = payload["media"]["payload"]
+                    f.writeframes(base64.b64decode(snippet))
+                    await websocket.send_json({
+                        "event": "media",
+                        "streamSid": payload.get("streamSid"),
+                        "media": {
+                            # audio/x-mulaw with a sample rate of 8000 and base64 encoded
+                            # Per https://www.twilio.com/docs/voice/twiml/stream#message-media-to-twilio
+                            "payload": snippet,
+                        }
+                    })
+    finally:
         await websocket.close()
-        raise
 
 
 routes = [
