@@ -10,6 +10,7 @@ starlette = "^0.19.0"
 uvicorn = {extras = ["standard"], version = "^0.17.6"}
 aiohttp = "^3.6.0"
 "discord.py" = {extras = ["voice"], version = "^1.7.3"}
+websockets = "^10.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

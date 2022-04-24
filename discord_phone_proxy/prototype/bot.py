@@ -1,7 +1,11 @@
+import subprocess
+import wave
+from contextlib import AsyncExitStack
 from asyncio import sleep, gather
 from time import perf_counter
 
 import discord
+import websockets
 from starlette.config import Config
 
 config = Config(".env")
@@ -11,33 +15,57 @@ VC_ID = config("VC_ID")
 
 
 class MyClient(discord.Client):
-    async def output_audio_loop(self, channel):
+    async def connect_to_vc(self):
+        self.vc: discord.VoiceChannel = await self.fetch_channel(VC_ID)
+        self.voice_client: discord.VoiceClient = await self.vc.connect()
+
+        async with AsyncExitStack() as stack:
+            self.call_ws = await stack.enter_async_context(
+                websockets.connect("ws://127.0.0.1:8000/discord")
+            )
+            self.call_ws_closer = stack.pop_all().aclose
+
+    async def receive_wav_file(self):
+        with wave.open("call2.wav", "wb") as f:
+            f.setnchannels(1)
+            f.setsampwidth(1)
+            f.setframerate(8000)
+            while True:
+                snippet = await self.call_ws.recv()
+                f.writeframes(snippet)
+    
+    async def output_audio_loop(self):
         FRAME_LENGTH = 20
         DELAY = FRAME_LENGTH / 1000.0
 
-        while True:
-            #with open("no.wav", "rb") as f:
-            with open("call.wav", "rb") as f:
-                no_audio = discord.FFmpegOpusAudio(f, pipe=True)
-                
-                start = perf_counter()
-                loops = 0
-
-                while True:
-                    loops += 1
-                    chunk =  no_audio.read()
-                    if not chunk:
-                        break
-
-                    self.voice_client.send_audio_packet(chunk, encode=False)
-
-                    next_time = start + DELAY * loops
-                    delay = max(0, DELAY + (next_time - perf_counter()))
-                    await sleep(delay)
-
+        no_audio = discord.FFmpegOpusAudio(subprocess.PIPE, pipe=True)
         
-                await channel.send("Just finished playing audio")
-                await sleep(3)
+        start = perf_counter()
+        loops = 0
+
+        with wave.open(no_audio._process.stdin, "wb") as f:
+            f.setnchannels(1)
+            f.setsampwidth(1)
+            f.setframerate(8000)
+
+            while True:
+                loops += 1
+
+                for _ in range(10000):
+                    snippet = await self.call_ws.recv()
+                    f.writeframes(snippet)
+
+                chunk =  no_audio.read()
+                if not chunk:
+                    print("No chunk yet")
+                    continue
+
+                print("Actually sending a chunk")
+                self.voice_client.send_audio_packet(chunk, encode=False)
+
+                next_time = start + DELAY * loops
+                delay = max(0, DELAY + (next_time - perf_counter()))
+                await sleep(delay)
 
     async def still_connected_loop(self, channel):
         while True:
@@ -45,7 +73,7 @@ class MyClient(discord.Client):
             await sleep(1)
 
     async def on_ready(self):
-        print('We have logged in as {0.user}'.format(client))
+        print(f'We have logged in as {self.user}')
 
     async def on_message(self, message):
         if message.author == client.user:
@@ -60,10 +88,8 @@ class MyClient(discord.Client):
             await message.channel.send("Playing")
 
         if message.content.startswith("$connect"):
-            self.vc: discord.VoiceChannel = await self.fetch_channel(VC_ID)
-            self.voice_client: discord.VoiceClient = await self.vc.connect()
-
-            await gather(self.output_audio_loop(message.channel), self.still_connected_loop(message.channel))
+            await self.connect_to_vc()
+            await self.output_audio_loop()
 
 
 if __name__ == "__main__":
