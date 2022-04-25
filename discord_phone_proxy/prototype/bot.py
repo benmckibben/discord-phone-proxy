@@ -40,32 +40,17 @@ class MyClient(discord.Client):
 
         no_audio = discord.FFmpegOpusAudio(subprocess.PIPE, pipe=True)
         
-        start = perf_counter()
-        loops = 0
-
         with wave.open(no_audio._process.stdin, "wb") as f:
             f.setnchannels(1)
             f.setsampwidth(1)
             f.setframerate(8000)
+            f.setnframes(1000000)
 
+            self.voice_client.play(no_audio, after=lambda e: print(f'Player error: {e}') if e else None)
             while True:
-                loops += 1
+                snippet = await self.call_ws.recv()
+                f.writeframesraw(snippet)
 
-                for _ in range(10000):
-                    snippet = await self.call_ws.recv()
-                    f.writeframes(snippet)
-
-                chunk =  no_audio.read()
-                if not chunk:
-                    print("No chunk yet")
-                    continue
-
-                print("Actually sending a chunk")
-                self.voice_client.send_audio_packet(chunk, encode=False)
-
-                next_time = start + DELAY * loops
-                delay = max(0, DELAY + (next_time - perf_counter()))
-                await sleep(delay)
 
     async def still_connected_loop(self, channel):
         while True:
