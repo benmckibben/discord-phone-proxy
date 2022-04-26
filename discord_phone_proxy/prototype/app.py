@@ -1,7 +1,5 @@
 import asyncio
 import base64
-import io
-import wave
 from collections import deque
 
 from aiohttp import ClientSession
@@ -9,7 +7,6 @@ from starlette.applications import Starlette
 from starlette.config import Config
 from starlette.routing import WebSocketRoute
 from starlette.websockets import WebSocket
-
 
 config = Config(".env")
 
@@ -26,7 +23,8 @@ async def send_discord_message(message: str) -> str:
             json={"content": message},
             headers={
                 "Authorization": f"Bot {BOT_TOKEN}",
-                "User-Agent": "ProxyBot (http://some.url, v0.1)",  # dummy values
+                # dummy values
+                "User-Agent": "ProxyBot (http://some.url, v0.1)",
             },
         ) as response:
             return await response.text()
@@ -35,7 +33,7 @@ async def send_discord_message(message: str) -> str:
 async def phone_connect(websocket: WebSocket) -> None:
     await websocket.accept()
     await send_discord_message(
-        "A call has come in, use `$connect` to connect them to the voice channel!"
+        "A call has come in, use `$connect` to connect them to the voice channel!"  # noqa: E501
     )
 
     try:
@@ -44,12 +42,12 @@ async def phone_connect(websocket: WebSocket) -> None:
 
             if payload.get("event") == "media":
                 # audio/x-mulaw with a sample rate of 8000 and base64 encoded
-                # Per https://www.twilio.com/docs/voice/twiml/stream#message-media-to-twilio
+                # Per https://www.twilio.com/docs/voice/twiml/stream#message-media-to-twilio  # noqa: E501
                 snippet = payload["media"]["payload"]
                 AUDIO_BUFFER.append(base64.b64decode(snippet))
 
-                # Echo back the packet we just received, resulting in the caller
-                # talking to themselves.
+                # Echo back the packet we just received, resulting in the
+                # caller talking to themselves.
                 await websocket.send_json(
                     {
                         "event": "media",

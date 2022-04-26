@@ -1,8 +1,5 @@
 import subprocess
 import wave
-from contextlib import AsyncExitStack
-from asyncio import sleep, gather
-from time import perf_counter
 
 import discord
 import websockets
@@ -12,7 +9,10 @@ config = Config(".env")
 
 BOT_TOKEN = config("BOT_TOKEN")
 VC_ID = config("VC_ID")
-PROXY_SERVER_URL = config("PROXY_SERVER_URL", default="ws://127.0.0.1:8000/discord")
+PROXY_SERVER_URL = config(
+    "PROXY_SERVER_URL",
+    default="ws://127.0.0.1:8000/discord",
+)
 
 
 class ProxyClient(discord.Client):
