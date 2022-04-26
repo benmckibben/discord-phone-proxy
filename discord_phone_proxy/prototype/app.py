@@ -25,7 +25,6 @@ CHANNEL_ID = config("CHANNEL_ID")
 call_bytes_buffer = deque()
 
 
-
 async def send_discord_message(message: str):
     async with ClientSession() as session:
         async with session.post(
@@ -34,7 +33,7 @@ async def send_discord_message(message: str):
             headers={
                 "Authorization": f"Bot {BOT_TOKEN}",
                 "User-Agent": "ProxyBot (http://some.url, v0.1)",
-            }
+            },
         ) as response:
             return await response.text()
 
@@ -42,26 +41,29 @@ async def send_discord_message(message: str):
 def index(request: Request) -> PlainTextResponse:
     return PlainTextResponse("Hiya")
 
+
 async def echo(websocket: WebSocket) -> None:
     await websocket.accept()
     await send_discord_message("A new call has been accepted!")
-    
+
     try:
         while True:
             payload: dict = await websocket.receive_json()
-            
+
             if payload.get("event") == "media":
                 # audio/x-mulaw with a sample rate of 8000 and base64 encoded
                 # Per https://www.twilio.com/docs/voice/twiml/stream#message-media-to-twilio
                 snippet = payload["media"]["payload"]
                 call_bytes_buffer.append(base64.b64decode(snippet))
-                await websocket.send_json({
-                    "event": "media",
-                    "streamSid": payload.get("streamSid"),
-                    "media": {
-                        "payload": snippet,
+                await websocket.send_json(
+                    {
+                        "event": "media",
+                        "streamSid": payload.get("streamSid"),
+                        "media": {
+                            "payload": snippet,
+                        },
                     }
-                })
+                )
     finally:
         await websocket.close()
 
@@ -77,20 +79,18 @@ async def discord_endpoint(websocket: WebSocket) -> None:
         f.setframerate(8000)
 
     wav_buffer.seek(0)
-    #await websocket.send_bytes(wav_buffer.read())
+    # await websocket.send_bytes(wav_buffer.read())
 
     call_bytes_buffer.clear()
 
     while True:
         try:
             chunk = call_bytes_buffer.popleft()
-            #print("Sending from buffer!")
+            # print("Sending from buffer!")
             await websocket.send_bytes(chunk)
         except IndexError:
-            #print("Nothing in the buffer :(")
+            # print("Nothing in the buffer :(")
             await asyncio.sleep(0.02)
-
-        
 
 
 routes = [

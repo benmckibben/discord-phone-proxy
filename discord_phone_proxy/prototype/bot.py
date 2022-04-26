@@ -33,24 +33,25 @@ class MyClient(discord.Client):
             while True:
                 snippet = await self.call_ws.recv()
                 f.writeframes(snippet)
-    
+
     async def output_audio_loop(self):
         FRAME_LENGTH = 20
         DELAY = FRAME_LENGTH / 1000.0
 
         no_audio = discord.FFmpegOpusAudio(subprocess.PIPE, pipe=True)
-        
+
         with wave.open(no_audio._process.stdin, "wb") as f:
             f.setnchannels(1)
             f.setsampwidth(1)
             f.setframerate(8000)
             f.setnframes(1000000)
 
-            self.voice_client.play(no_audio, after=lambda e: print(f'Player error: {e}') if e else None)
+            self.voice_client.play(
+                no_audio, after=lambda e: print(f"Player error: {e}") if e else None
+            )
             while True:
                 snippet = await self.call_ws.recv()
                 f.writeframesraw(snippet)
-
 
     async def still_connected_loop(self, channel):
         while True:
@@ -58,18 +59,20 @@ class MyClient(discord.Client):
             await sleep(1)
 
     async def on_ready(self):
-        print(f'We have logged in as {self.user}')
+        print(f"We have logged in as {self.user}")
 
     async def on_message(self, message):
         if message.author == client.user:
             return
 
-        if message.content.startswith('$hello'):
-            await message.channel.send('Hello!')
+        if message.content.startswith("$hello"):
+            await message.channel.send("Hello!")
 
         if message.content.startswith("$play"):
             source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio("no.wav"))
-            self.voice_client.play(source, after=lambda e: print(f"Player error: {e}") if e else None)
+            self.voice_client.play(
+                source, after=lambda e: print(f"Player error: {e}") if e else None
+            )
             await message.channel.send("Playing")
 
         if message.content.startswith("$connect"):
