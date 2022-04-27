@@ -11,7 +11,7 @@ from starlette.websockets import WebSocket
 config = Config(".env")
 
 BOT_TOKEN = config("BOT_TOKEN")
-CHANNEL_ID = config("CHANNEL_ID")
+TEXT_CHANNEL_ID = config("TEXT_CHANNEL_ID")
 
 AUDIO_BUFFER = deque()
 
@@ -19,7 +19,7 @@ AUDIO_BUFFER = deque()
 async def send_discord_message(message: str) -> str:
     async with ClientSession() as session:
         async with session.post(
-            f"https://discord.com/api/channels/{CHANNEL_ID}/messages",
+            f"https://discord.com/api/channels/{TEXT_CHANNEL_ID}/messages",
             json={"content": message},
             headers={
                 "Authorization": f"Bot {BOT_TOKEN}",

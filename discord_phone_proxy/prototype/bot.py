@@ -8,7 +8,7 @@ from starlette.config import Config
 config = Config(".env")
 
 BOT_TOKEN = config("BOT_TOKEN")
-VC_ID = config("VC_ID")
+VOICE_CHANNEL_ID = config("VOICE_CHANNEL_ID")
 PROXY_SERVER_URL = config(
     "PROXY_SERVER_URL",
     default="ws://127.0.0.1:8000/discord",
@@ -17,7 +17,9 @@ PROXY_SERVER_URL = config(
 
 class ProxyClient(discord.Client):
     async def connect_to_voice_channel(self):
-        voice_channel: discord.VoiceChannel = await self.fetch_channel(VC_ID)
+        voice_channel: discord.VoiceChannel = await self.fetch_channel(
+            VOICE_CHANNEL_ID
+        )
         voice_client: discord.VoiceClient = await voice_channel.connect()
 
         # Okay, don't ask me how this works but we're basically constructing
