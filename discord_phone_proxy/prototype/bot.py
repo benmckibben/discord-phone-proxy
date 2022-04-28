@@ -17,9 +17,7 @@ PROXY_SERVER_URL = config(
 
 class ProxyClient(discord.Client):
     async def connect_to_voice_channel(self):
-        voice_channel: discord.VoiceChannel = await self.fetch_channel(
-            VOICE_CHANNEL_ID
-        )
+        voice_channel: discord.VoiceChannel = await self.fetch_channel(VOICE_CHANNEL_ID)
         voice_client: discord.VoiceClient = await voice_channel.connect()
 
         # Okay, don't ask me how this works but we're basically constructing
