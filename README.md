@@ -2,15 +2,15 @@
 System using [Starlette](https://www.starlette.io/) and [discord.py](https://discordpy.readthedocs.io/en/stable/) to proxy [Twilio](https://www.twilio.com/) phone calls into [Discord](https://discord.com/) voice channels.
 
 ## Proof-of-concept / incompleteness disclaimer
-This project is unfinished, and will remain so indefinitely as my goal was to see how far I could push the concept of linking phone calls and Discord voice channels. As such, a full-featured proxy is absent from this repo, and I only claim the following functionality:
+This project is unfinished, and will remain so indefinitely as my goal was to see how far I could push linking phone calls and Discord voice channels. As such, a full-featured proxy is absent from this repo, and I only claim the following functionality:
 
 *This system allows a user to call a Twilio phone number and have their voice (low quality and very distorted) transmitted to a Discord voice channel.*
 
 This system currently is NOT:
 * Production-ready. At all.
 * Able to relay the output of the Discord voice channel back to the phone call. As far as I can tell, discord.py and Discord don't supply APIs for receiving voice data from a voice channel connection.
-* Able to support multiple users / voice channels, mainly due to the shared buffer mechanism in the Starlette app.
-* Efficient. There is noticeably delay between speaking into the phone and hearing that audio in the call.
+* Able to support multiple users / channels, mainly due to the shared buffer mechanism in the Starlette app.
+* Efficient. There is noticeable delay between speaking into the phone and hearing that audio in the call.
 
 That said, I had fun with this experiment. :)
 
@@ -21,10 +21,10 @@ Before starting, be aware that this system requires a Discord bot account and a 
 
 1. Use [Poetry](https://python-poetry.org/) to install dependencies.
 1. Set the following environment variables or specify them in a `.env` file:
-  * `BOT_TOKEN`: your Discord bot token
-  * `VOICE_CHANNEL_ID`: Discord ID of the voice channel to transmit to
-  * `TEXT_CHANNEL_ID`: Discord ID of the text channel for call connection notifications
-  * `PROXY_SERVER_URL` (optional): URL of the websocket endpoint exposed by the Starlette app that the discord.py bot will connect to.
+    * `BOT_TOKEN`: your Discord bot token
+    * `VOICE_CHANNEL_ID`: Discord ID of the voice channel to transmit to
+    * `TEXT_CHANNEL_ID`: Discord ID of the text channel for call connection notifications
+    * `PROXY_SERVER_URL` (optional): URL of the websocket endpoint exposed by the Starlette app that the discord.py bot will connect to.
 1. Spin up the Starlette app with `poetry run uvicorn --reload discord_phone_proxy.prototype.app:app` and expose it to the internet (Twilio opens the websockets). I use [ngrok](https://ngrok.com/) from my local machine, but you can just as easily use an EC2 instance or something.
 1. In a separate terminal (or host if you really want to), spin up the Discord.py bot with `poetry run python -m discord_phone_proxy.prototype.bot`. You do NOT need to expose this component to the internet.
 1. Configure a Twilio phone number to execute `twiml.xml` (replacing the hostname with the hostname of the Starlette app) on an incoming call. Reference Twilio's docs to learn how to accomplish this.
